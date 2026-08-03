@@ -1,0 +1,7 @@
+anthropic
+faiss-cpu
+sentence-transformers
+numpy
+django
+django-cors-headers
+gunicorn

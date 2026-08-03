@@ -1,0 +1,11 @@
+My name is Sundar Anbu. I am passionate about technology and enjoy learning new things. In my free time, I like to work on interesting projects and share knowledge with others.
+I am a Forward Deployed Engineer based in the Greater Bengaluru Area, India.
+I embed with customers, scope ambiguous problems, and ship production software that moves real metrics.
+Over 4+ years I have owned products end-to-end across healthcare, edtech, and AI startups.
+I have served 100k+ users and improved systems by lowering database costs by 50% and speeding up APIs by 40%.
+I currently work as a Full Stack Engineer at Wadhwani Foundation, building React, Node.js, and TypeScript applications.
+Previously I was a Senior Engineer at Wyzard.ai, where I built the Blooming Health Resource Directory for Maryland.
+At Contiinex I led a backend migration to Node.js, Sequelize, and PostgreSQL and improved REST API response times with Redis caching.
+At Ken42 I led a team of five engineers to deliver a NASSCOM-funded edtech platform serving over 100,000 users.
+My stack includes TypeScript, JavaScript, Python, React, Next.js, Node.js, PostgreSQL, MongoDB, Docker, Kubernetes, and GCP.
+I am open to Forward Deployed Engineer roles and can be reached at sundaranbu18@gmail.com or via sundaranbu.com.
