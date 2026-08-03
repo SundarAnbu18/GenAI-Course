@@ -5,6 +5,8 @@ git add Rag/data/document.txt
 git commit -m "Add more documentation content"
 git push origin feat-sundar
 
+
+gcloud compute ssh ragbot-vm --zone=asia-south1-a
 cd ~/GenAI-Course
 git pull
 cd Rag

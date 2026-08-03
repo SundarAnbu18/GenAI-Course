@@ -5,7 +5,7 @@ from sentence_transformers import SentenceTransformer
 model = SentenceTransformer('all-MiniLM-L6-v2')
 
 with open('data/document.txt', 'r') as f:
-    docs = [line.strip() for line in f.readlines() if line.strip()]
+    docs = [' '.join(chunk.split()) for chunk in f.read().split('\n\n') if chunk.strip()]
 
 print(f"Number of documents read: {len(docs)}")
 
