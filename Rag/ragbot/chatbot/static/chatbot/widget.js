@@ -10,32 +10,53 @@
 
   var style = document.createElement('style');
   style.textContent = [
-    '#ragbot-launcher{position:fixed;bottom:24px;right:24px;width:58px;height:58px;border-radius:50%;',
-    'background:linear-gradient(120deg,#6366f1,#8b5cf6);border:none;box-shadow:0 12px 28px rgba(99,102,241,.45);',
-    'cursor:pointer;z-index:999999;display:flex;align-items:center;justify-content:center;transition:transform .15s ease;}',
-    '#ragbot-launcher:hover{transform:scale(1.06);}',
-    '#ragbot-launcher svg{width:26px;height:26px;fill:#fff;}',
-    '#ragbot-panel{position:fixed;bottom:96px;right:24px;width:340px;max-width:calc(100vw - 32px);height:460px;',
-    'max-height:calc(100vh - 140px);background:#fff;border-radius:16px;box-shadow:0 25px 60px rgba(0,0,0,.35);',
-    'display:none;flex-direction:column;overflow:hidden;z-index:999999;font-family:-apple-system,BlinkMacSystemFont,',
-    '"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}',
-    '#ragbot-panel.open{display:flex;}',
-    '#ragbot-header{padding:16px 18px;background:linear-gradient(120deg,#6366f1,#8b5cf6);color:#fff;',
-    'font-weight:700;font-size:15px;display:flex;align-items:center;justify-content:space-between;}',
-    '#ragbot-close{background:none;border:none;color:#fff;font-size:18px;cursor:pointer;line-height:1;opacity:.85;}',
-    '#ragbot-close:hover{opacity:1;}',
-    '#ragbot-messages{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;background:#fafafa;}',
-    '.ragbot-bubble{max-width:85%;padding:10px 13px;border-radius:12px;font-size:13.5px;line-height:1.5;white-space:pre-wrap;}',
-    '.ragbot-bubble.user{align-self:flex-end;background:#eef2ff;color:#1e1b2e;border-bottom-right-radius:3px;}',
-    '.ragbot-bubble.bot{align-self:flex-start;background:#fff;border:1px solid #eef0f4;color:#1e1b2e;border-bottom-left-radius:3px;}',
-    '.ragbot-bubble.pending{align-self:flex-start;color:#9ca3af;font-style:italic;}',
-    '#ragbot-form{display:flex;gap:8px;padding:12px;border-top:1px solid #eee;background:#fff;}',
-    '#ragbot-input{flex:1;resize:none;border:1.5px solid #e5e7eb;border-radius:10px;padding:9px 11px;font-size:13.5px;',
-    'font-family:inherit;outline:none;height:38px;}',
-    '#ragbot-input:focus{border-color:#6366f1;}',
-    '#ragbot-send{border:none;border-radius:10px;padding:0 16px;background:linear-gradient(120deg,#6366f1,#8b5cf6);',
-    'color:#fff;font-weight:600;font-size:13.5px;cursor:pointer;}',
-    '#ragbot-send:disabled{opacity:.6;cursor:default;}'
+    '#ragbot-launcher{position:fixed;bottom:24px;right:24px;width:60px;height:60px;border-radius:50%;',
+    'background:linear-gradient(135deg,#fbbf24,#f59e0b);border:none;box-shadow:0 10px 30px rgba(245,158,11,.4),0 0 0 1px rgba(255,255,255,.06);',
+    'cursor:pointer;z-index:999999;display:flex;align-items:center;justify-content:center;transition:transform .18s ease,box-shadow .18s ease;}',
+    '#ragbot-launcher:hover{transform:scale(1.07);box-shadow:0 14px 34px rgba(245,158,11,.5),0 0 0 1px rgba(255,255,255,.08);}',
+    '#ragbot-launcher svg{width:26px;height:26px;fill:#1a1206;}',
+
+    '#ragbot-panel{position:fixed;bottom:96px;right:24px;width:352px;max-width:calc(100vw - 32px);height:480px;',
+    'max-height:calc(100vh - 140px);background:#121218;border-radius:18px;box-shadow:0 30px 70px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.06);',
+    'display:flex;flex-direction:column;overflow:hidden;z-index:999999;font-family:-apple-system,BlinkMacSystemFont,',
+    '"Segoe UI",Roboto,Helvetica,Arial,sans-serif;',
+    'opacity:0;visibility:hidden;transform:translateY(16px) scale(.97);transform-origin:bottom right;',
+    'transition:opacity .18s ease,transform .18s ease,visibility .18s;}',
+    '#ragbot-panel.open{opacity:1;visibility:visible;transform:translateY(0) scale(1);}',
+
+    '#ragbot-header{padding:18px 20px;background:#17171f;border-bottom:1px solid rgba(255,255,255,.06);',
+    'display:flex;align-items:center;justify-content:space-between;}',
+    '#ragbot-header-title{display:flex;flex-direction:column;gap:2px;}',
+    '#ragbot-header-title strong{color:#f5f5f7;font-size:14.5px;font-weight:700;letter-spacing:-.01em;}',
+    '#ragbot-header-title span{color:#8a8a93;font-size:11.5px;display:flex;align-items:center;gap:5px;}',
+    '#ragbot-header-title span::before{content:"";width:6px;height:6px;border-radius:50%;background:#34d399;',
+    'box-shadow:0 0 0 3px rgba(52,211,153,.18);display:inline-block;}',
+    '#ragbot-close{background:none;border:none;color:#8a8a93;font-size:16px;cursor:pointer;line-height:1;',
+    'padding:6px;border-radius:8px;transition:background .15s,color .15s;}',
+    '#ragbot-close:hover{background:rgba(255,255,255,.06);color:#f5f5f7;}',
+
+    '#ragbot-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;background:#121218;}',
+    '#ragbot-messages:empty::before{content:"Ask me anything about this page \\2014 I\'ll answer from what I know.";',
+    'color:#5c5c66;font-size:13px;line-height:1.6;display:block;padding-top:8px;}',
+    '.ragbot-bubble{max-width:85%;padding:10px 14px;border-radius:14px;font-size:13.5px;line-height:1.55;white-space:pre-wrap;}',
+    '.ragbot-bubble.user{align-self:flex-end;background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#1a1206;',
+    'font-weight:500;border-bottom-right-radius:4px;}',
+    '.ragbot-bubble.bot{align-self:flex-start;background:#1c1c25;border:1px solid rgba(255,255,255,.07);',
+    'color:#e4e4e9;border-bottom-left-radius:4px;}',
+    '.ragbot-bubble.pending{align-self:flex-start;color:#7a7a85;font-style:italic;background:transparent;border:none;padding-left:2px;}',
+
+    '#ragbot-form{display:flex;gap:8px;padding:14px;border-top:1px solid rgba(255,255,255,.06);background:#17171f;}',
+    '#ragbot-input{flex:1;resize:none;border:1.5px solid rgba(255,255,255,.09);border-radius:11px;padding:10px 12px;',
+    'font-size:13.5px;font-family:inherit;outline:none;height:40px;background:#1c1c25;color:#f5f5f7;transition:border-color .15s;}',
+    '#ragbot-input::placeholder{color:#5c5c66;}',
+    '#ragbot-input:focus{border-color:#f59e0b;}',
+    '#ragbot-send{border:none;border-radius:11px;padding:0 18px;background:linear-gradient(135deg,#fbbf24,#f59e0b);',
+    'color:#1a1206;font-weight:700;font-size:13.5px;cursor:pointer;transition:transform .12s,opacity .12s;}',
+    '#ragbot-send:hover:not(:disabled){transform:translateY(-1px);}',
+    '#ragbot-send:disabled{opacity:.5;cursor:default;}',
+
+    '#ragbot-messages::-webkit-scrollbar{width:6px;}',
+    '#ragbot-messages::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:3px;}'
   ].join('');
   document.head.appendChild(style);
 
@@ -47,7 +68,10 @@
   var panel = document.createElement('div');
   panel.id = 'ragbot-panel';
   panel.innerHTML =
-    '<div id="ragbot-header"><span>Chat with us</span><button id="ragbot-close" aria-label="Close chat">✕</button></div>' +
+    '<div id="ragbot-header">' +
+      '<div id="ragbot-header-title"><strong>Chat with us</strong><span>Online now</span></div>' +
+      '<button id="ragbot-close" aria-label="Close chat">✕</button>' +
+    '</div>' +
     '<div id="ragbot-messages"></div>' +
     '<form id="ragbot-form">' +
     '<textarea id="ragbot-input" placeholder="Ask a question..." rows="1"></textarea>' +
