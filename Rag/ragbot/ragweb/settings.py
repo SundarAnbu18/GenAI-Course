@@ -1,6 +1,8 @@
 import os
 from pathlib import Path
 
+from corsheaders.defaults import default_headers
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'dev-only-secret-key-change-me')
@@ -54,3 +56,4 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Your website's origin(s), e.g. "https://your-site.com,https://www.your-site.com"
 CORS_ALLOWED_ORIGINS = [o.strip() for o in os.environ.get('CORS_ALLOWED_ORIGINS', '').split(',') if o.strip()]
+CORS_ALLOW_HEADERS = [*default_headers, 'x-api-key']
