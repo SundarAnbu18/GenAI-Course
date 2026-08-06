@@ -82,6 +82,26 @@ cd ~/GenAI-Course && git pull && cd ragbot && source .venv/bin/activate && pytho
 
 Skip `build-index` when only code changed — it re-embeds the whole corpus.
 
+When `requirements.txt` changed, install before restarting:
+
+```bash
+cd ~/GenAI-Course/ragbot && source .venv/bin/activate && pip install -r requirements.txt && sudo systemctl restart ragbot
+```
+
+### Conversation memory needs a DSN here
+
+The unit runs `--workers 2`, and the default in-process history store is only
+visible to the worker that created it — follow-ups would land on the other
+worker about half the time and arrive with no history. Add to `/etc/ragbot.env`:
+
+```
+RAG_HISTORY_DSN=sqlite:////home/YOUR_USER/GenAI-Course/ragbot/var/history.sqlite3
+```
+
+Four slashes: `sqlite://` plus an absolute path. The file is created on first
+use, lives outside version control, and grows with every question asked —
+nothing prunes it.
+
 ---
 
 ## Reference systemd unit

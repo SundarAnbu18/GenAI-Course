@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+import uuid
 from typing import List, Optional
 
 from .config import get_settings
@@ -27,7 +28,14 @@ def _cmd_build_index(args: argparse.Namespace) -> int:
 
 
 def _cmd_ask(args: argparse.Namespace) -> int:
-    print(get_pipeline().answer(" ".join(args.question), args.top_k))
+    answer = get_pipeline().answer(" ".join(args.question), args.top_k)
+    print(answer.text)
+
+    meta = [answer.model]
+    if answer.temperature is not None:
+        meta.append(f"temp {answer.temperature}")
+    meta.append(f"{answer.input_tokens} in / {answer.output_tokens} out")
+    print(f"\n[{' · '.join(meta)}]")
     return 0
 
 
@@ -44,6 +52,8 @@ def _cmd_search(args: argparse.Namespace) -> int:
 
 def _cmd_chat(args: argparse.Namespace) -> int:
     pipeline = get_pipeline()
+    # One id for the session, so follow-ups can refer back to earlier answers.
+    conversation_id = str(uuid.uuid4())
     print("Ask about the indexed documents. Ctrl-C or 'exit' to quit.\n")
     while True:
         try:
@@ -53,7 +63,7 @@ def _cmd_chat(args: argparse.Namespace) -> int:
             return 0
         if question.lower() in {"exit", "quit", ""}:
             return 0
-        print("\n" + pipeline.answer(question, args.top_k) + "\n")
+        print("\n" + pipeline.answer(question, args.top_k, conversation_id).text + "\n")
 
 
 def build_parser() -> argparse.ArgumentParser:

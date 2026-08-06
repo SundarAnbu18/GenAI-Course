@@ -11,9 +11,26 @@ from unittest.mock import patch
 from django.test import SimpleTestCase, override_settings
 from django.urls import reverse
 
+from ragcore.chunking import Chunk
 from ragcore.exceptions import IndexNotBuiltError
+from ragcore.generator import Answer
+from ragcore.store import SearchResult
 
 ANSWER_TARGET = "chatbot.views.answer_question"
+CONVERSATION_ID = "3f2504e0-4f89-41d3-9a0c-0305e82c3301"
+
+
+def an_answer(text="Bengaluru.") -> Answer:
+    """The views receive an Answer object now, not a bare string."""
+    return Answer(
+        text=text,
+        model="claude-sonnet-5",
+        temperature=None,
+        input_tokens=12,
+        output_tokens=3,
+        stop_reason="end_turn",
+        sources=[SearchResult(Chunk(text="alpha", source="document.txt"), distance=0.1)],
+    )
 
 
 class QuietLogsMixin:
@@ -34,19 +51,52 @@ class AskApiTests(QuietLogsMixin, SimpleTestCase):
             **headers,
         )
 
-    @patch(ANSWER_TARGET, return_value="Sundar is an engineer.")
+    @patch(ANSWER_TARGET, return_value=an_answer("Sundar is an engineer."))
     def test_returns_the_answer(self, mocked):
         response = self.post({"question": "who is sundar?"})
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {"answer": "Sundar is an engineer."})
-        mocked.assert_called_once_with("who is sundar?")
+        self.assertEqual(response.json()["answer"], "Sundar is an engineer.")
+        mocked.assert_called_once_with("who is sundar?", conversation_id=None)
 
-    @patch(ANSWER_TARGET, return_value="ok")
+    @patch(ANSWER_TARGET, return_value=an_answer())
+    def test_returns_the_metadata_alongside_the_answer(self, mocked):
+        payload = self.post({"question": "where?"}).json()
+
+        self.assertEqual(payload["model"], "claude-sonnet-5")
+        self.assertIsNone(payload["temperature"])
+        self.assertEqual(payload["usage"], {"input_tokens": 12, "output_tokens": 3})
+        self.assertEqual(payload["sources"][0]["source"], "document.txt")
+
+    @patch(ANSWER_TARGET, return_value=an_answer("ok"))
     def test_strips_surrounding_whitespace(self, mocked):
         self.post({"question": "  spaced  "})
 
-        mocked.assert_called_once_with("spaced")
+        mocked.assert_called_once_with("spaced", conversation_id=None)
+
+    @patch(ANSWER_TARGET, return_value=an_answer())
+    def test_passes_a_conversation_id_through_and_echoes_it_back(self, mocked):
+        response = self.post({"question": "and his cloud skills?", "conversation_id": CONVERSATION_ID})
+
+        mocked.assert_called_once_with(
+            "and his cloud skills?", conversation_id=CONVERSATION_ID
+        )
+        self.assertEqual(response.json()["conversation_id"], CONVERSATION_ID)
+
+    @patch(ANSWER_TARGET, return_value=an_answer())
+    def test_omits_the_conversation_id_when_none_was_sent(self, mocked):
+        self.assertNotIn("conversation_id", self.post({"question": "who?"}).json())
+
+    @patch(ANSWER_TARGET)
+    def test_rejects_a_conversation_id_that_is_not_a_uuid(self, mocked):
+        # It becomes a key in a shared store, so it is validated not trusted.
+        for bad in ["../../etc/passwd", "abc", 12345]:
+            with self.subTest(value=bad):
+                response = self.post({"question": "who?", "conversation_id": bad})
+
+                self.assertEqual(response.status_code, 400)
+                self.assertIn("conversation_id", response.json()["error"])
+        mocked.assert_not_called()
 
     def test_rejects_a_missing_question(self):
         response = self.post({})
@@ -81,7 +131,7 @@ class AskApiTests(QuietLogsMixin, SimpleTestCase):
         self.assertEqual(self.post({"question": "hi"}, HTTP_X_API_KEY="wrong").status_code, 401)
 
     @override_settings(WIDGET_API_KEY="s3cret")
-    @patch(ANSWER_TARGET, return_value="ok")
+    @patch(ANSWER_TARGET, return_value=an_answer("ok"))
     def test_accepts_the_correct_api_key(self, mocked):
         response = self.post({"question": "hi"}, HTTP_X_API_KEY="s3cret")
 
@@ -110,7 +160,7 @@ class ChatPageTests(QuietLogsMixin, SimpleTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "<form")
 
-    @patch(ANSWER_TARGET, return_value="Bengaluru.")
+    @patch(ANSWER_TARGET, return_value=an_answer())
     def test_post_shows_the_answer(self, mocked):
         response = self.client.post(reverse("chat"), {"question": "where?"})
 
@@ -130,7 +180,7 @@ class ChatPageTests(QuietLogsMixin, SimpleTestCase):
 
         mocked.assert_not_called()
 
-    @patch(ANSWER_TARGET, return_value="Bengaluru.")
+    @patch(ANSWER_TARGET, return_value=an_answer())
     def test_the_input_is_empty_after_an_answer(self, mocked):
         response = self.client.post(reverse("chat"), {"question": "where?"})
 
@@ -142,19 +192,33 @@ class ChatPageTests(QuietLogsMixin, SimpleTestCase):
 class ChatPageBackgroundPostTests(QuietLogsMixin, SimpleTestCase):
     """The page posts in the background so it can show a loader meanwhile."""
 
-    def post(self, question):
+    def post(self, question, **extra):
         return self.client.post(
             reverse("chat"),
-            {"question": question},
+            dict({"question": question}, **extra),
             HTTP_X_REQUESTED_WITH="XMLHttpRequest",
         )
 
-    @patch(ANSWER_TARGET, return_value="Bengaluru.")
+    @patch(ANSWER_TARGET, return_value=an_answer())
+    def test_passes_a_conversation_id_through(self, mocked):
+        response = self.post("and his skills?", conversation_id=CONVERSATION_ID)
+
+        mocked.assert_called_once_with("and his skills?", conversation_id=CONVERSATION_ID)
+        self.assertEqual(response.json()["conversation_id"], CONVERSATION_ID)
+
+    @patch(ANSWER_TARGET)
+    def test_rejects_a_conversation_id_that_is_not_a_uuid(self, mocked):
+        response = self.post("who?", conversation_id="not-a-uuid")
+
+        self.assertEqual(response.status_code, 400)
+        mocked.assert_not_called()
+
+    @patch(ANSWER_TARGET, return_value=an_answer())
     def test_returns_json_rather_than_a_page(self, mocked):
         response = self.post("where?")
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {"answer": "Bengaluru."})
+        self.assertEqual(response.json()["answer"], "Bengaluru.")
 
     def test_rejects_an_empty_question(self):
         self.assertEqual(self.post("   ").status_code, 400)

@@ -13,7 +13,8 @@ from typing import List, Optional
 
 from .config import Settings, get_settings
 from .embeddings import get_embedder
-from .generator import generate_answer
+from .generator import Answer, condense_question, generate_answer
+from .history import get_history, recent_messages, record_turn
 from .store import SearchResult, VectorStore
 
 
@@ -35,9 +36,28 @@ class RagPipeline:
         """The passages most similar to ``question``."""
         return self.store.search(question, k or self.settings.top_k)
 
-    def answer(self, question: str, k: Optional[int] = None) -> str:
-        """Retrieve context for ``question`` and have Claude answer from it."""
-        return generate_answer(question, self.retrieve(question, k), self.settings)
+    def answer(
+        self,
+        question: str,
+        k: Optional[int] = None,
+        conversation_id: Optional[str] = None,
+    ) -> Answer:
+        """Retrieve context for ``question`` and have Claude answer from it.
+
+        Given a ``conversation_id`` the earlier turns are loaded, the follow-up
+        is rewritten into a standalone question *for retrieval only*, and the
+        exchange is recorded once answered. Without one the turn is stateless,
+        exactly as before.
+        """
+        store = get_history(conversation_id, self.settings) if conversation_id else None
+        history = recent_messages(store, self.settings) if store is not None else []
+
+        results = self.retrieve(condense_question(question, history, self.settings), k)
+        answer = generate_answer(question, results, history, self.settings)
+
+        if store is not None:
+            record_turn(store, question, answer.text)
+        return answer
 
     def warmup(self) -> None:
         """Load the index and the embedding model now rather than mid-request."""
@@ -51,9 +71,13 @@ def get_pipeline() -> RagPipeline:
     return RagPipeline()
 
 
-def answer_question(question: str, k: Optional[int] = None) -> str:
+def answer_question(
+    question: str,
+    k: Optional[int] = None,
+    conversation_id: Optional[str] = None,
+) -> Answer:
     """Convenience entry point used by the web app and the CLI."""
-    return get_pipeline().answer(question, k)
+    return get_pipeline().answer(question, k, conversation_id)
 
 
 def warmup() -> None:

@@ -17,7 +17,7 @@ from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
 
-from ragcore import RagError, answer_question, get_settings
+from ragcore import RagError, answer_question, get_settings, is_valid_conversation_id
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +25,14 @@ MAX_QUESTION_LENGTH = 1000
 
 GENERIC_ERROR = "Something went wrong answering that. Please try again."
 UNAVAILABLE_ERROR = "The assistant is unavailable right now."
+BAD_CONVERSATION_ERROR = "'conversation_id' must be a UUID"
+
+
+def _with_conversation(payload: dict, conversation_id: str) -> dict:
+    """Echo the conversation back so the client knows the turn was recorded."""
+    if conversation_id:
+        payload["conversation_id"] = conversation_id
+    return payload
 
 
 def _is_authorized(request: HttpRequest) -> bool:
@@ -46,12 +54,22 @@ def chat(request: HttpRequest) -> HttpResponse:
     needs no widget key.
     """
     question, answer, error, status = "", None, None, 200
+    is_background = request.headers.get("X-Requested-With") == "XMLHttpRequest"
 
     if request.method == "POST":
         question = request.POST.get("question", "").strip()[:MAX_QUESTION_LENGTH]
+        conversation_id = request.POST.get("conversation_id", "").strip()
+
+        if conversation_id and not is_valid_conversation_id(conversation_id):
+            if is_background:
+                return JsonResponse({"error": BAD_CONVERSATION_ERROR}, status=400)
+            # The no-JavaScript path has no way to mint an id; ignore a bad one
+            # and answer statelessly rather than showing an error.
+            conversation_id = ""
+
         if question:
             try:
-                answer = answer_question(question)
+                answer = answer_question(question, conversation_id=conversation_id or None)
             except RagError:
                 logger.exception("RAG pipeline unavailable")
                 error, status = UNAVAILABLE_ERROR, 503
@@ -59,12 +77,12 @@ def chat(request: HttpRequest) -> HttpResponse:
                 logger.exception("Unexpected failure answering question")
                 error, status = GENERIC_ERROR, 500
 
-        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        if is_background:
             if not question:
                 return JsonResponse({"error": "'question' is required"}, status=400)
             if error:
                 return JsonResponse({"error": error}, status=status)
-            return JsonResponse({"answer": answer})
+            return JsonResponse(_with_conversation(answer.to_dict(), conversation_id))
 
     return render(
         request,
@@ -103,8 +121,15 @@ def ask_api(request: HttpRequest) -> JsonResponse:
             status=400,
         )
 
+    conversation_id = payload.get("conversation_id") or ""
+    if not isinstance(conversation_id, str):
+        return JsonResponse({"error": BAD_CONVERSATION_ERROR}, status=400)
+    conversation_id = conversation_id.strip()
+    if conversation_id and not is_valid_conversation_id(conversation_id):
+        return JsonResponse({"error": BAD_CONVERSATION_ERROR}, status=400)
+
     try:
-        answer = answer_question(question)
+        answer = answer_question(question, conversation_id=conversation_id or None)
     except RagError:
         logger.exception("RAG pipeline unavailable")
         return JsonResponse({"error": UNAVAILABLE_ERROR}, status=503)
@@ -112,7 +137,7 @@ def ask_api(request: HttpRequest) -> JsonResponse:
         logger.exception("Unexpected failure answering question")
         return JsonResponse({"error": GENERIC_ERROR}, status=500)
 
-    return JsonResponse({"answer": answer})
+    return JsonResponse(_with_conversation(answer.to_dict(), conversation_id))
 
 
 @require_GET

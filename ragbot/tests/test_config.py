@@ -39,6 +39,39 @@ class SettingsTests(TestCase):
         with self.assertRaises(ConfigurationError):
             get_settings()
 
+    @patch.dict(os.environ, {}, clear=True)
+    def test_temperature_is_unset_by_default(self):
+        # claude-sonnet-5 and the current Opus models reject a temperature
+        # outright, so it must never be sent unless someone asks for it.
+        self.assertIsNone(get_settings().temperature)
+
+    @patch.dict(os.environ, {"RAG_TEMPERATURE": "0.2"}, clear=True)
+    def test_temperature_can_be_configured(self):
+        self.assertEqual(get_settings().temperature, 0.2)
+
+    @patch.dict(os.environ, {"RAG_TEMPERATURE": "warm"}, clear=True)
+    def test_a_non_numeric_temperature_is_a_configuration_error(self):
+        with self.assertRaises(ConfigurationError):
+            get_settings()
+
+    @patch.dict(os.environ, {}, clear=True)
+    def test_history_defaults_to_in_process_memory(self):
+        settings = get_settings()
+
+        self.assertEqual(settings.history_dsn, "")
+        self.assertEqual(settings.history_turns, 6)
+
+    @patch.dict(
+        os.environ,
+        {"RAG_HISTORY_DSN": "sqlite:///var/history.sqlite3", "RAG_HISTORY_TURNS": "2"},
+        clear=True,
+    )
+    def test_history_can_be_pointed_at_a_database(self):
+        settings = get_settings()
+
+        self.assertEqual(settings.history_dsn, "sqlite:///var/history.sqlite3")
+        self.assertEqual(settings.history_turns, 2)
+
     @patch.dict(os.environ, {"RAG_INDEX_DIR": "/tmp/rag-index"}, clear=True)
     def test_index_files_hang_off_the_index_directory(self):
         settings = get_settings()

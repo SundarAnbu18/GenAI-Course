@@ -8,6 +8,41 @@
     return;
   }
 
+  // Ties a visitor's turns together so follow-ups make sense. Set
+  // RAGBOT_CONFIG.remember = false to keep every question stateless.
+  var CONVERSATION_KEY = 'ragbot-conversation';
+  var REMEMBER = config.remember !== false;
+
+  function uuid4() {
+    if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    if (!window.crypto || !crypto.getRandomValues) return null;
+    var bytes = crypto.getRandomValues(new Uint8Array(16));
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    var hex = [];
+    for (var i = 0; i < 16; i++) hex.push((bytes[i] + 0x100).toString(16).slice(1));
+    return [
+      hex.slice(0, 4).join(''), hex.slice(4, 6).join(''), hex.slice(6, 8).join(''),
+      hex.slice(8, 10).join(''), hex.slice(10, 16).join('')
+    ].join('-');
+  }
+
+  function conversationId() {
+    if (!REMEMBER) return null;
+    // Third-party storage is often blocked; stateless is the safe fallback.
+    try {
+      var id = localStorage.getItem(CONVERSATION_KEY);
+      if (!id) {
+        id = uuid4();
+        if (!id) return null;
+        localStorage.setItem(CONVERSATION_KEY, id);
+      }
+      return id;
+    } catch (e) {
+      return null;
+    }
+  }
+
   var style = document.createElement('style');
   style.textContent = [
     '#ragbot-launcher{position:fixed;bottom:24px;right:24px;width:60px;height:60px;border-radius:50%;',
@@ -117,10 +152,14 @@
     var headers = { 'Content-Type': 'application/json' };
     if (API_KEY) headers['X-Api-Key'] = API_KEY;
 
+    var payload = { question: question };
+    var conversation = conversationId();
+    if (conversation) payload.conversation_id = conversation;
+
     fetch(API_URL, {
       method: 'POST',
       headers: headers,
-      body: JSON.stringify({ question: question })
+      body: JSON.stringify(payload)
     })
       .then(function (res) { return res.json(); })
       .then(function (data) {

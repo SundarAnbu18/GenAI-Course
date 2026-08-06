@@ -69,6 +69,9 @@ defaults. The ones worth knowing:
 | `ANTHROPIC_API_KEY` | — | Required to generate answers |
 | `RAG_TOP_K` | `3` | Passages retrieved per question |
 | `RAG_CHAT_MODEL` | `claude-sonnet-5` | Model used for the answer |
+| `RAG_TEMPERATURE` | unset | Sampling temperature. Only sent when set — the default model rejects it |
+| `RAG_HISTORY_DSN` | unset | Where conversations are stored. Empty = process memory (dev only) |
+| `RAG_HISTORY_TURNS` | `6` | How many past exchanges are replayed to the model |
 | `RAG_EAGER_LOAD` | off | Load the model at boot, not on first request |
 | `WIDGET_API_KEY` | empty | Shared secret for `/api/ask/`; empty disables the check |
 | `CORS_ALLOWED_ORIGINS` | empty | Sites allowed to call the API from a browser |
@@ -76,9 +79,50 @@ defaults. The ones worth knowing:
 ## API
 
 ```
-POST /api/ask/      {"question": "..."}  ->  {"answer": "..."}
+POST /api/ask/      {"question": "..."}
 GET  /api/health/   ->  {"status": "ok", "index_ready": true}
 ```
+
+`/api/ask/` answers with the text plus the metadata about how it was produced:
+
+```json
+{
+  "answer": "Sundar is based in the Greater Bengaluru Area, India.",
+  "model": "claude-sonnet-5",
+  "temperature": null,
+  "usage": {"input_tokens": 412, "output_tokens": 28},
+  "stop_reason": "end_turn",
+  "sources": [{"source": "document.txt", "distance": 1.194, "preview": "My name is Sundar Anbu..."}]
+}
+```
+
+`temperature` is whatever `RAG_TEMPERATURE` is set to — `null` when unset, since
+the default model rejects the parameter. `sources` shows what retrieval fed the
+model, which is the fastest way to explain a surprising answer.
+
+## Conversations
+
+Send a `conversation_id` (a UUID, minted and stored by the client) with each
+request and the turn is remembered:
+
+```
+POST /api/ask/  {"question": "and his cloud skills?", "conversation_id": "3f2504e0-..."}
+```
+
+Omit it and the request is stateless, exactly as before. Anything that isn't a
+UUID is rejected with a 400 — the id becomes a key in a shared store.
+
+Two things happen when history exists. The follow-up is first rewritten into a
+standalone question, because retrieval on *"and his cloud skills?"* finds
+nothing useful on its own; the model then answers the question in the user's
+original words, with the prior turns in context. That means **two model calls
+per turn** once a conversation is under way.
+
+Storage is `RAG_HISTORY_DSN`. Leaving it empty keeps history in process memory,
+which works for `runserver` and silently loses turns under gunicorn — its
+workers are separate processes. The store keeps every turn; `RAG_HISTORY_TURNS`
+only bounds how many are replayed. Deciding how long to retain what visitors
+type is your call, and there is no cleanup job.
 
 `/api/ask/` returns 400 for a malformed or over-long question, 401 when
 `WIDGET_API_KEY` is set and the `X-Api-Key` header doesn't match, and 503 when

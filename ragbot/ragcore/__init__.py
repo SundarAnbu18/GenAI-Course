@@ -12,12 +12,14 @@ The web layer lives in ``chatbot`` and ``ragweb``; this package is the engine.
 
 from .chunking import Chunk, chunk_document, split_paragraphs
 from .config import Settings, get_settings
+from .generator import Answer
 from .exceptions import (
     ConfigurationError,
     IndexNotBuiltError,
     NoDocumentsError,
     RagError,
 )
+from .history import forget, is_valid_conversation_id
 from .indexing import build_index, load_chunks
 from .pipeline import RagPipeline, answer_question, get_pipeline, warmup
 from .store import SearchResult, VectorStore
@@ -29,12 +31,15 @@ __all__ = [
     "NoDocumentsError",
     "RagError",
     "RagPipeline",
+    "Answer",
     "SearchResult",
     "Settings",
     "VectorStore",
     "answer_question",
     "build_index",
     "chunk_document",
+    "forget",
+    "is_valid_conversation_id",
     "get_pipeline",
     "get_settings",
     "load_chunks",

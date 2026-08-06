@@ -6,6 +6,7 @@ the pipeline configurable in production without editing code.
 """
 
 from __future__ import annotations
+from typing import Optional
 
 import os
 from dataclasses import dataclass
@@ -58,6 +59,15 @@ def _env_int(name: str, default: int) -> int:
     except ValueError as exc:
         raise ConfigurationError(f"{name} must be an integer, got {raw!r}") from exc
 
+def _env_float(name: str, default: Optional[float] = None) -> Optional[float]:
+    raw = os.environ.get(name)
+    if not raw:
+        return default
+    try:
+        return float(raw)
+    except ValueError as exc:
+        raise ConfigurationError(f"{name} must be a number, got {raw!r}") from exc
+
 
 @dataclass(frozen=True)
 class Settings:
@@ -69,6 +79,9 @@ class Settings:
     chat_model: str
     top_k: int
     max_tokens: int
+    temperature: Optional[float]
+    history_dsn: str
+    history_turns: int
     anthropic_api_key: str
 
     @property
@@ -101,5 +114,12 @@ def get_settings() -> Settings:
         chat_model=os.environ.get("RAG_CHAT_MODEL", "claude-sonnet-5"),
         top_k=_env_int("RAG_TOP_K", 3),
         max_tokens=_env_int("RAG_MAX_TOKENS", 1024),
+        # No default: claude-sonnet-5 and the current Opus models reject a
+        # temperature outright, so it is only sent when explicitly configured.
+        temperature=_env_float("RAG_TEMPERATURE"),
+        # Empty means in-process memory, which is fine for one dev server and
+        # wrong for gunicorn's multiple workers. See ragcore/history.py.
+        history_dsn=os.environ.get("RAG_HISTORY_DSN", ""),
+        history_turns=_env_int("RAG_HISTORY_TURNS", 6),
         anthropic_api_key=os.environ.get("ANTHROPIC_API_KEY", ""),
     )

@@ -114,6 +114,15 @@
             opacity: 0.6;
         }
 
+        .bubble .meta {
+            display: block;
+            margin-top: 10px;
+            padding-top: 8px;
+            border-top: 1px solid #eef0f4;
+            font-size: 11px;
+            color: var(--muted);
+        }
+
         .bubble.user {
             background: var(--user-bubble);
             color: var(--text);
@@ -221,6 +230,27 @@
             box-shadow: none;
         }
 
+        .actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        button.ghost {
+            background: none;
+            color: var(--muted);
+            box-shadow: none;
+            font-weight: 500;
+            padding: 11px 14px;
+        }
+
+        button.ghost:hover:not(:disabled) {
+            color: var(--text);
+            transform: none;
+            box-shadow: none;
+        }
+
         .footer-hint {
             margin-top: 18px;
             font-size: 12px;
@@ -244,7 +274,8 @@
                 </div>
                 {% if answer %}
                 <div class="bubble bot">
-                    <span class="label">Bot</span>{{ answer }}
+                    <span class="label">Bot</span>{{ answer.text }}
+                    <span class="meta">{{ answer.model }}{% if answer.temperature is not None %} · temp {{ answer.temperature }}{% endif %} · {{ answer.input_tokens }} in / {{ answer.output_tokens }} out · {{ answer.sources|length }} sources</span>
                 </div>
                 {% else %}
                 <div class="bubble bot error">
@@ -256,7 +287,10 @@
             <form method="post" id="chat-form">
                 {% csrf_token %}
                 <textarea name="question" id="question" placeholder="Ask a question about the documents..."></textarea>
-                <button type="submit" id="ask">Ask →</button>
+                <div class="actions">
+                    <button type="button" id="reset" class="ghost">New conversation</button>
+                    <button type="submit" id="ask">Ask →</button>
+                </div>
             </form>
             <p class="footer-hint">Retrieval-augmented answers · Powered by Claude</p>
         </div>
@@ -294,6 +328,56 @@
                 return append(el);
             }
 
+            // The server is stateless; this id is what ties turns together.
+            var CONVERSATION_KEY = 'ragbot-conversation';
+
+            function uuid4() {
+                if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+                if (!window.crypto || !crypto.getRandomValues) return null;
+                var bytes = crypto.getRandomValues(new Uint8Array(16));
+                bytes[6] = (bytes[6] & 0x0f) | 0x40;
+                bytes[8] = (bytes[8] & 0x3f) | 0x80;
+                var hex = [];
+                for (var i = 0; i < 16; i++) {
+                    hex.push((bytes[i] + 0x100).toString(16).slice(1));
+                }
+                return [
+                    hex.slice(0, 4).join(''), hex.slice(4, 6).join(''),
+                    hex.slice(6, 8).join(''), hex.slice(8, 10).join(''),
+                    hex.slice(10, 16).join('')
+                ].join('-');
+            }
+
+            function conversationId() {
+                // Storage can be blocked (private mode, embedded contexts).
+                // Falling back to no id just means the turn is stateless.
+                try {
+                    var id = localStorage.getItem(CONVERSATION_KEY);
+                    if (!id) {
+                        id = uuid4();
+                        if (!id) return null;
+                        localStorage.setItem(CONVERSATION_KEY, id);
+                    }
+                    return id;
+                } catch (e) {
+                    return null;
+                }
+            }
+
+            function metaLine(data) {
+                var bits = [data.model];
+                if (data.temperature !== null && data.temperature !== undefined) {
+                    bits.push('temp ' + data.temperature);
+                }
+                if (data.usage) {
+                    bits.push(data.usage.input_tokens + ' in / ' + data.usage.output_tokens + ' out');
+                }
+                if (data.sources) {
+                    bits.push(data.sources.length + ' sources');
+                }
+                return bits.join(' · ');
+            }
+
             function loader() {
                 var el = document.createElement('div');
                 el.className = 'bubble bot loading';
@@ -314,6 +398,12 @@
                 button.disabled = true;
                 var pending = loader();
 
+                var body = 'question=' + encodeURIComponent(question);
+                var conversation = conversationId();
+                if (conversation) {
+                    body += '&conversation_id=' + encodeURIComponent(conversation);
+                }
+
                 fetch(form.action, {
                     method: 'POST',
                     headers: {
@@ -321,7 +411,7 @@
                         'X-Requested-With': 'XMLHttpRequest',
                         'X-CSRFToken': token.value
                     },
-                    body: 'question=' + encodeURIComponent(question)
+                    body: body
                 })
                     .then(function (response) {
                         return response.json().catch(function () {
@@ -331,7 +421,11 @@
                     .then(function (data) {
                         pending.remove();
                         if (data.answer) {
-                            bubble('bot', 'Bot', data.answer);
+                            var el = bubble('bot', 'Bot', data.answer);
+                            var meta = document.createElement('span');
+                            meta.className = 'meta';
+                            meta.textContent = metaLine(data);
+                            el.appendChild(meta);
                         } else {
                             bubble('bot error', 'Error', data.error || 'Something went wrong. Please try again.');
                         }
@@ -343,6 +437,17 @@
                     .then(function () {
                         button.disabled = false;
                     });
+            });
+
+            document.getElementById('reset').addEventListener('click', function () {
+                try {
+                    localStorage.removeItem(CONVERSATION_KEY);
+                } catch (e) {
+                    // Nothing stored means nothing to forget.
+                }
+                thread.innerHTML = '';
+                thread.classList.remove('has-messages');
+                input.focus();
             });
         })();
     </script>

@@ -8,6 +8,8 @@ numpy
 
 # Generation — LangChain's Anthropic integration (pulls in the anthropic SDK)
 langchain-anthropic
+# Conversation history stores (SQLChatMessageHistory); brings SQLAlchemy along
+langchain-community
 
 # Web
 django
