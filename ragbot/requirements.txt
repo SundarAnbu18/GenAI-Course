@@ -6,8 +6,8 @@ sentence-transformers
 faiss-cpu
 numpy
 
-# Generation
-anthropic
+# Generation — LangChain's Anthropic integration (pulls in the anthropic SDK)
+langchain-anthropic
 
 # Web
 django
