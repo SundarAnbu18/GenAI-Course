@@ -1,0 +1,15 @@
+# Runtime dependencies for the RAG chatbot.
+#   pip install -r requirements.txt
+
+# Retrieval: embeddings + vector search (pulls in torch, so this is the big one)
+sentence-transformers
+faiss-cpu
+numpy
+
+# Generation
+anthropic
+
+# Web
+django
+django-cors-headers
+gunicorn

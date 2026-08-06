@@ -1,0 +1,5 @@
+# Development extras. The test suite runs on Django's own runner, so this only
+# adds what is needed beyond the runtime dependencies.
+#   pip install -r requirements-dev.txt
+
+-r requirements.txt
