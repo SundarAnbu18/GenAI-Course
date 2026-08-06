@@ -130,6 +130,55 @@ class ChatPageTests(QuietLogsMixin, SimpleTestCase):
 
         mocked.assert_not_called()
 
+    @patch(ANSWER_TARGET, return_value="Bengaluru.")
+    def test_the_input_is_empty_after_an_answer(self, mocked):
+        response = self.client.post(reverse("chat"), {"question": "where?"})
+
+        # The textarea must come back empty rather than repeating the question.
+        self.assertContains(response, "></textarea>")
+        self.assertNotContains(response, "where?</textarea>")
+
+
+class ChatPageBackgroundPostTests(QuietLogsMixin, SimpleTestCase):
+    """The page posts in the background so it can show a loader meanwhile."""
+
+    def post(self, question):
+        return self.client.post(
+            reverse("chat"),
+            {"question": question},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+    @patch(ANSWER_TARGET, return_value="Bengaluru.")
+    def test_returns_json_rather_than_a_page(self, mocked):
+        response = self.post("where?")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"answer": "Bengaluru."})
+
+    def test_rejects_an_empty_question(self):
+        self.assertEqual(self.post("   ").status_code, 400)
+
+    @patch(ANSWER_TARGET, side_effect=IndexNotBuiltError("no index"))
+    def test_a_cold_index_is_a_503(self, mocked):
+        response = self.post("where?")
+
+        self.assertEqual(response.status_code, 503)
+        self.assertNotIn("no index", response.json()["error"])
+
+    @patch(ANSWER_TARGET, side_effect=RuntimeError("boom"))
+    def test_an_unexpected_failure_is_a_500(self, mocked):
+        response = self.post("where?")
+
+        self.assertEqual(response.status_code, 500)
+        self.assertNotIn("boom", response.json()["error"])
+
+    def test_a_get_still_renders_the_page(self):
+        response = self.client.get(reverse("chat"), HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "<form")
+
 
 class HealthTests(QuietLogsMixin, SimpleTestCase):
     def test_reports_missing_index(self):

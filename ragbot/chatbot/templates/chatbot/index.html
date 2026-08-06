@@ -89,6 +89,10 @@
             display: flex;
             flex-direction: column;
             gap: 14px;
+        }
+
+        /* Only claim the gap above the form once there is something to show. */
+        .thread.has-messages {
             margin-bottom: 20px;
         }
 
@@ -133,6 +137,33 @@
             color: #991b1b;
         }
 
+        .bubble.loading .dots {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            height: 9px;
+        }
+
+        .bubble.loading .dots i {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--accent-1);
+            animation: dot-pulse 1.2s infinite ease-in-out;
+        }
+
+        .bubble.loading .dots i:nth-child(2) { animation-delay: 0.18s; }
+        .bubble.loading .dots i:nth-child(3) { animation-delay: 0.36s; }
+
+        @keyframes dot-pulse {
+            0%, 80%, 100% { opacity: 0.25; transform: translateY(0); }
+            40% { opacity: 1; transform: translateY(-3px); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .bubble.loading .dots i { animation: none; opacity: 0.5; }
+        }
+
         form {
             display: flex;
             flex-direction: column;
@@ -174,13 +205,20 @@
             box-shadow: 0 8px 20px rgba(99, 102, 241, 0.35);
         }
 
-        button:hover {
+        button:hover:not(:disabled) {
             transform: translateY(-1px);
             box-shadow: 0 10px 24px rgba(99, 102, 241, 0.45);
         }
 
-        button:active {
+        button:active:not(:disabled) {
             transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.55;
+            cursor: default;
+            transform: none;
+            box-shadow: none;
         }
 
         .footer-hint {
@@ -199,8 +237,8 @@
             <p>Answers are grounded in your documents, retrieved live via FAISS.</p>
         </div>
         <div class="body">
-            {% if answer or error %}
-            <div class="thread">
+            <div class="thread{% if answer or error %} has-messages{% endif %}" id="thread">
+                {% if answer or error %}
                 <div class="bubble user">
                     <span class="label">You</span>{{ question }}
                 </div>
@@ -213,15 +251,100 @@
                     <span class="label">Error</span>{{ error }}
                 </div>
                 {% endif %}
+                {% endif %}
             </div>
-            {% endif %}
-            <form method="post">
+            <form method="post" id="chat-form">
                 {% csrf_token %}
-                <textarea name="question" placeholder="Ask a question about the documents...">{{ question }}</textarea>
-                <button type="submit">Ask →</button>
+                <textarea name="question" id="question" placeholder="Ask a question about the documents..."></textarea>
+                <button type="submit" id="ask">Ask →</button>
             </form>
             <p class="footer-hint">Retrieval-augmented answers · Powered by Claude</p>
         </div>
     </div>
+
+    <script>
+        // Progressive enhancement: post the question in the background so the
+        // thread stays on screen with a loader while Claude answers. Without
+        // JavaScript the form still submits normally and the page re-renders.
+        (function () {
+            var form = document.getElementById('chat-form');
+            var input = document.getElementById('question');
+            var button = document.getElementById('ask');
+            var thread = document.getElementById('thread');
+            var token = form.querySelector('[name=csrfmiddlewaretoken]');
+
+            if (!window.fetch || !token) return;
+
+            function append(node) {
+                thread.appendChild(node);
+                thread.classList.add('has-messages');
+                node.scrollIntoView({ block: 'nearest' });
+                return node;
+            }
+
+            function bubble(className, label, text) {
+                var el = document.createElement('div');
+                el.className = 'bubble ' + className;
+                var tag = document.createElement('span');
+                tag.className = 'label';
+                tag.textContent = label;
+                el.appendChild(tag);
+                // textContent, not innerHTML — the answer is untrusted text.
+                el.appendChild(document.createTextNode(text));
+                return append(el);
+            }
+
+            function loader() {
+                var el = document.createElement('div');
+                el.className = 'bubble bot loading';
+                el.innerHTML = '<span class="label">Bot</span><span class="dots"><i></i><i></i><i></i></span>';
+                el.setAttribute('aria-label', 'Thinking');
+                return append(el);
+            }
+
+            form.addEventListener('submit', function (event) {
+                event.preventDefault();
+
+                var question = input.value.trim();
+                if (!question || button.disabled) return;
+
+                bubble('user', 'You', question);
+                input.value = '';
+                input.focus();
+                button.disabled = true;
+                var pending = loader();
+
+                fetch(form.action, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': token.value
+                    },
+                    body: 'question=' + encodeURIComponent(question)
+                })
+                    .then(function (response) {
+                        return response.json().catch(function () {
+                            return { error: 'Something went wrong. Please try again.' };
+                        });
+                    })
+                    .then(function (data) {
+                        pending.remove();
+                        if (data.answer) {
+                            bubble('bot', 'Bot', data.answer);
+                        } else {
+                            bubble('bot error', 'Error', data.error || 'Something went wrong. Please try again.');
+                        }
+                    })
+                    .catch(function () {
+                        pending.remove();
+                        bubble('bot error', 'Error', 'Network error — please try again.');
+                    })
+                    .then(function () {
+                        button.disabled = false;
+                    });
+            });
+        })();
+    </script>
 </body>
 </html>

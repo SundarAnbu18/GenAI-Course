@@ -37,8 +37,15 @@ def _is_authorized(request: HttpRequest) -> bool:
 
 
 def chat(request: HttpRequest) -> HttpResponse:
-    """The standalone chat page."""
-    question, answer, error = "", None, None
+    """The standalone chat page.
+
+    The page posts here in the background so it can show a loader and keep the
+    thread on screen; those requests are marked with ``X-Requested-With`` and
+    get JSON back. A plain form POST — no JavaScript — re-renders the page as
+    before. Unlike ``ask_api`` this is same-origin and CSRF-protected, so it
+    needs no widget key.
+    """
+    question, answer, error, status = "", None, None, 200
 
     if request.method == "POST":
         question = request.POST.get("question", "").strip()[:MAX_QUESTION_LENGTH]
@@ -47,10 +54,17 @@ def chat(request: HttpRequest) -> HttpResponse:
                 answer = answer_question(question)
             except RagError:
                 logger.exception("RAG pipeline unavailable")
-                error = UNAVAILABLE_ERROR
+                error, status = UNAVAILABLE_ERROR, 503
             except Exception:
                 logger.exception("Unexpected failure answering question")
-                error = GENERIC_ERROR
+                error, status = GENERIC_ERROR, 500
+
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            if not question:
+                return JsonResponse({"error": "'question' is required"}, status=400)
+            if error:
+                return JsonResponse({"error": error}, status=status)
+            return JsonResponse({"answer": answer})
 
     return render(
         request,
