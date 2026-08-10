@@ -12,6 +12,8 @@ langchain-text-splitters>=1.1,<2
 langchain-huggingface>=1.2,<2
 langchain-anthropic>=1.5,<2
 
+flask>=3,<4
+
 # Not listed: `langchain` itself is never imported (LCEL lives in langchain-core),
 # and sentence-transformers / anthropic arrive as dependencies of the two
 # integration packages above.
