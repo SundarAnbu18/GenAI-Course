@@ -1,0 +1,11 @@
+# Everything except pypdf is already in the repo-root .venv.
+pypdf
+sentence-transformers
+numpy
+anthropic
+langchain
+langchain-community
+langchain-text-splitters
+langchain-huggingface
+langchain-anthropic
+langchain-core
