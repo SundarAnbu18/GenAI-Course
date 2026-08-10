@@ -21,4 +21,6 @@ def split_documents(docs, size=CHUNK_SIZE, overlap=CHUNK_OVERLAP):
 
 
 def load_chunks(size=CHUNK_SIZE, overlap=CHUNK_OVERLAP):
+    print("Loading documents...",split_documents(load_documents(), size, overlap))
+
     return split_documents(load_documents(), size, overlap)
