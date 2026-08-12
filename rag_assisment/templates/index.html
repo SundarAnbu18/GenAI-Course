@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CloudSync RAG Desk</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Sora:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink: #1a2e28;
+      --muted: #4a635a;
+      --paper: #e8f0ec;
+      --panel: #f4faf6;
+      --line: #b7cfc4;
+      --accent: #0d7a5f;
+      --accent-deep: #065a45;
+      --user: #d6ebe2;
+      --bot: #ffffff;
+      --warn: #8a4b12;
+      --shadow: 0 12px 40px rgba(26, 46, 40, 0.08);
+      --radius: 14px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Sora", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(ellipse 80% 50% at 10% 0%, #cfe8dc 0%, transparent 55%),
+        radial-gradient(ellipse 60% 40% at 100% 100%, #d4e4f0 0%, transparent 50%),
+        linear-gradient(165deg, #eef5f1 0%, #e2ebe6 100%);
+    }
+
+    .shell {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 2.5rem 1.25rem 2rem;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    header {
+      margin-bottom: 1.5rem;
+      animation: rise 0.6s ease-out both;
+    }
+
+    header h1 {
+      font-family: "Fraunces", serif;
+      font-weight: 700;
+      font-size: clamp(1.75rem, 4vw, 2.35rem);
+      letter-spacing: -0.02em;
+      margin: 0 0 0.35rem;
+      color: var(--accent-deep);
+    }
+
+    header p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+      max-width: 36rem;
+      line-height: 1.5;
+    }
+
+    .thread {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      padding: 0.25rem 0 1.25rem;
+      overflow-y: auto;
+    }
+
+    .msg {
+      max-width: 92%;
+      padding: 0.9rem 1.1rem;
+      border-radius: var(--radius);
+      line-height: 1.55;
+      font-size: 0.95rem;
+      animation: rise 0.35s ease-out both;
+      box-shadow: var(--shadow);
+    }
+
+    .msg.user {
+      align-self: flex-end;
+      background: var(--user);
+      border: 1px solid var(--line);
+    }
+
+    .msg.bot {
+      align-self: flex-start;
+      background: var(--bot);
+      border: 1px solid var(--line);
+    }
+
+    .msg.error {
+      border-color: #e0b08a;
+      color: var(--warn);
+      background: #fff8f0;
+    }
+
+    .msg .label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      margin-bottom: 0.4rem;
+    }
+
+    .sources {
+      margin-top: 0.75rem;
+      padding-top: 0.65rem;
+      border-top: 1px dashed var(--line);
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .sources ul {
+      margin: 0.35rem 0 0;
+      padding-left: 1.1rem;
+    }
+
+    .composer {
+      position: sticky;
+      bottom: 0;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 0.85rem;
+      box-shadow: var(--shadow);
+      animation: rise 0.7s 0.1s ease-out both;
+    }
+
+    .composer form {
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 4.5rem;
+      resize: vertical;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 0.75rem 0.9rem;
+      font: inherit;
+      color: var(--ink);
+      background: #fff;
+    }
+
+    textarea:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+    }
+
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .toggle {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .toggle input {
+      accent-color: var(--accent);
+      width: 1rem;
+      height: 1rem;
+    }
+
+    button[type="submit"] {
+      appearance: none;
+      border: none;
+      background: var(--accent);
+      color: #fff;
+      font: inherit;
+      font-weight: 600;
+      font-size: 0.9rem;
+      padding: 0.65rem 1.25rem;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: background 0.15s ease, transform 0.15s ease;
+    }
+
+    button[type="submit"]:hover:not(:disabled) {
+      background: var(--accent-deep);
+      transform: translateY(-1px);
+    }
+
+    button[type="submit"]:disabled {
+      opacity: 0.55;
+      cursor: wait;
+    }
+
+    .hint {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 0.5rem;
+    }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <h1>CloudSync RAG Desk</h1>
+      <p>Ask about leave policy, the FAQ, or the weather API. Answers come only from the indexed PDFs when grounding is on.</p>
+    </header>
+
+    <div class="thread" id="thread" aria-live="polite"></div>
+
+    <div class="composer">
+      <form id="ask-form">
+        <label class="visually-hidden" for="question" style="position:absolute;left:-9999px">Question</label>
+        <textarea id="question" name="question" maxlength="2000" placeholder="e.g. How many days of annual leave do I get?" required></textarea>
+        <div class="row">
+          <label class="toggle">
+            <input type="checkbox" id="grounded" checked />
+            Grounded answers only
+          </label>
+          <button type="submit" id="send">Ask</button>
+        </div>
+      </form>
+      <p class="hint">First question may take a bit while the document index loads.</p>
+    </div>
+  </div>
+
+  <script>
+    const thread = document.getElementById("thread");
+    const form = document.getElementById("ask-form");
+    const questionEl = document.getElementById("question");
+    const groundedEl = document.getElementById("grounded");
+    const sendBtn = document.getElementById("send");
+
+    function addMessage(role, html, extraClass) {
+      const el = document.createElement("div");
+      el.className = "msg " + role + (extraClass ? " " + extraClass : "");
+      el.innerHTML = html;
+      thread.appendChild(el);
+      el.scrollIntoView({ behavior: "smooth", block: "end" });
+      return el;
+    }
+
+    function escapeHtml(text) {
+      return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function formatAnswer(text) {
+      return escapeHtml(text).replace(/\n/g, "<br>");
+    }
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const question = questionEl.value.trim();
+      if (!question) return;
+
+      addMessage(
+        "user",
+        '<div class="label">You</div>' + formatAnswer(question)
+      );
+      questionEl.value = "";
+      sendBtn.disabled = true;
+      sendBtn.textContent = "Thinking…";
+
+      const pending = addMessage(
+        "bot",
+        '<div class="label">Assistant</div>Retrieving and generating…'
+      );
+
+      try {
+        const res = await fetch("/api/ask", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            question,
+            grounded: groundedEl.checked,
+          }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          pending.classList.add("error");
+          pending.innerHTML =
+            '<div class="label">Error</div>' +
+            formatAnswer(data.error || "Request failed (" + res.status + ").");
+          return;
+        }
+
+        let sourcesHtml = "";
+        if (Array.isArray(data.sources) && data.sources.length) {
+          sourcesHtml =
+            '<div class="sources"><strong>Sources</strong><ul>' +
+            data.sources
+              .map((s) => "<li>" + escapeHtml(s) + "</li>")
+              .join("") +
+            "</ul></div>";
+        }
+
+        pending.innerHTML =
+          '<div class="label">Assistant</div>' +
+          formatAnswer(data.answer || "") +
+          sourcesHtml;
+      } catch (err) {
+        pending.classList.add("error");
+        pending.innerHTML =
+          '<div class="label">Error</div>' +
+          formatAnswer(err.message || "Network error.");
+      } finally {
+        sendBtn.disabled = false;
+        sendBtn.textContent = "Ask";
+        questionEl.focus();
+      }
+    });
+  </script>
+</body>
+</html>

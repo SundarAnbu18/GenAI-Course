@@ -1,0 +1,17 @@
+# Runtime dependencies for the RAG chatbot.
+#   pip install -r requirements.txt
+
+# Retrieval: embeddings + vector search (pulls in torch, so this is the big one)
+sentence-transformers
+faiss-cpu
+numpy
+
+# Generation — LangChain's Anthropic integration (pulls in the anthropic SDK)
+langchain-anthropic
+# Conversation history stores (SQLChatMessageHistory); brings SQLAlchemy along
+langchain-community
+
+# Web
+django
+django-cors-headers
+gunicorn

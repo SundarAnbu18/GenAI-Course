@@ -1,0 +1,45 @@
+My name is Sundar Anbu. I am a Forward Deployed Engineer based in the Greater Bengaluru Area, India, open to Forward Deployed Engineer roles. I embed with customers, scope ambiguous problems, and ship production software that moves real metrics.
+
+Over 4+ years I've owned products end-to-end — from the first customer conversation to deployed, maintained systems — across healthcare, edtech, and AI startups. I've built directly for clients like Blooming Health (a health-resource platform for Maryland) and a U.S. healthcare provider (HIPAA-compliant patient management), turning messy requirements into reliable software. I move fast, care about clean architecture, and thrive in ambiguity where the goal is customer outcomes, not just shipped code.
+
+My impact by the numbers: 4+ years shipping software, 100k+ users served across the platforms I've built, 50% lower database costs achieved through query optimization, and 40% faster API response times through caching and indexing.
+
+My languages: TypeScript, JavaScript, Python, Dart, SQL.
+
+My frontend skills: React.js, Next.js, Redux.js, TailwindCSS, Flutter.
+
+My backend skills: Node.js, Express.js, REST APIs, Microservices, Sequelize.
+
+My data skills: PostgreSQL, MongoDB, Redis, Firebase.
+
+My cloud and delivery skills: Docker, Kubernetes, GCP Cloud Run, Azure, GitHub Actions.
+
+My AI and product skills: Large Language Models, AI-assisted workflows, NLP integrations, Systems design, Stakeholder management.
+
+I currently work as a Full Stack Engineer at Wadhwani Foundation (May 2026 — Present, Bangalore, India, Remote). I build and deploy full-stack web applications (React, Node.js, TypeScript) supporting Wadhwani Foundation's programs and the teams and stakeholders who run them. I partner directly with program and operations teams to translate ambiguous requirements into production features, iterating on real user feedback, and own features end-to-end — design, development, deployment and maintenance — with a focus on reliability, clean architecture and measurable outcomes.
+
+Previously I was a Senior Engineer at Wyzard.ai (Jul 2025 — Mar 2026, Gurugram, India, Remote). I built and deployed a full-featured Resource Directory platform for Blooming Health using React.js, Node.js, MongoDB and Express.js, enabling users to discover health and wellness resources across Maryland. I developed scalable RESTful APIs and MongoDB data models for resource categorisation, search and filtering, contributed to Wyzard AI's product using the MERN stack building AI-assisted workflow features and user-facing dashboards, and implemented CI/CD pipelines with GitHub Actions and Docker, reducing release turnaround by 35%.
+
+Before that I was a Full-stack Developer at Contiinex.com (Feb 2025 — Jul 2025, Bangalore, India, On-site). I led migration of legacy backend systems to Node.js, Sequelize and PostgreSQL, reducing database costs by 50% through query optimisation and indexing. I improved REST API response times by 40% using advanced indexing, Redis caching and database load reduction in PostgreSQL, architected scalable microservices with Docker, Kubernetes and GCP Cloud Run for high availability under peak loads, and designed modular TypeScript-based React.js components for internal dashboards, improving developer velocity and UI performance.
+
+I was a Full-stack Developer at Ken42 (Sep 2022 — Feb 2025, Bangalore, India, On-site). I led a cross-functional team of 5 engineers to deliver a NASSCOM-funded edtech platform serving 100,000+ users using React.js, Redux, Node.js and MongoDB. I designed and implemented a full-stack investor management portal with role-based access control, built modular reusable React + Redux components that reduced page load time by 35%, automated cloud deployments using GitHub Actions, GCP Cloud Run and Docker that cut release cycles and manual intervention by 60%, and optimised Firebase and GCP configurations achieving a 30% reduction in monthly infrastructure costs.
+
+I was a Software Developer at SmarTek21 (Mar 2022 — Aug 2022, Pune, India, On-site). I developed a HIPAA-compliant patient management system using Node.js, Express.js, React.js and PostgreSQL for a U.S.-based healthcare client, integrated NLP-based chatbot APIs to automate patient interaction workflows reducing manual support load by 25%, and built real-time dashboards and admin analytics tools for monitoring patient data and operational KPIs.
+
+I started my career at Tenr Inventure (P) Ltd (Feb 2021 — Feb 2022, Bangalore, India, On-site), promoted from Internship Trainee to Junior Software Engineer. I built and consumed REST APIs and shipped features across the product's front end, using REST APIs, GitHub, and Figma.
+
+One of my key projects is the Blooming Health Resource Directory (2025, at Wyzard.ai) — a health and wellness resource directory covering the state of Maryland, with categorised search, filtering and scalable MongoDB data models behind a React front end, built with React.js, Node.js, Express.js and MongoDB.
+
+Another key project is the NASSCOM Skills Platform (2024, at Ken42) — a NASSCOM-funded edtech platform serving 100,000+ learners, where I led a team of five engineers across skill development, assessment and certification tracking, built with React.js, Redux, Node.js and MongoDB.
+
+I also built the Turbostart Investor Portal (2023, at Ken42) — an investor management portal with role-based access control, portfolio tracking and document management, secured with Firebase Authentication and SSO, built with React.js, Redux, Express.js and Firebase.
+
+I built Equios (2025, personal product) — an equestrian performance platform for tracking events and analysing rider progress, shipped as a web app alongside native iOS and Android clients, built with React, Node.js and Flutter.
+
+I built ZipZap (2024, personal product) — a food delivery platform spanning a marketing site, a customer ordering app and a restaurant partner console, with real-time order tracking throughout, built with React, Node.js and Flutter.
+
+I also built my own Personal Portfolio (2026) at sundaranbu.com, hand-built with React and TailwindCSS with a custom design system, no template, content driven by a single typed data module.
+
+I have three cross-platform apps live on the App Store and Google Play, built with Flutter: Equios (track events, analyse performance, and grow your equestrian journey), ZipZap Food (order from your favourite restaurants and manage orders end-to-end), and ZipZap Restaurant Partner (a restaurant-side console for managing incoming orders and operations).
+
+You can reach me by email at sundaranbu18@gmail.com. I am based in the Greater Bengaluru Area, India, and I am open to Forward Deployed Engineer roles. You can also find me on GitHub, LinkedIn, X, and WhatsApp via links on my portfolio at sundaranbu.com.

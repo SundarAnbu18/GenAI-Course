@@ -1,0 +1,23 @@
+# Secrets
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Virtual environments
+.venv/
+venv/
+
+# Generated indexes and caches — rebuild with `python -m ragcore build-index`
+ragbot/var/
+personal_rag/.rag_index.npz
+
+# Django
+*.sqlite3
+staticfiles/
+
+# macOS
+.DS_Store

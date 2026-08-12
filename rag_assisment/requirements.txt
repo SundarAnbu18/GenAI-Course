@@ -1,0 +1,19 @@
+# Python 3.13 venv lives at rag_assisment/.venv
+#   python3.13 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt
+#
+# Pinned to major versions on purpose: LangChain 1.0 removed `langchain.chains`,
+# so an unpinned install silently changes the API surface depending on the day.
+
+pypdf>=6,<7
+
+langchain-core>=1.5,<2
+langchain-community>=0.4,<1
+langchain-text-splitters>=1.1,<2
+langchain-huggingface>=1.2,<2
+langchain-anthropic>=1.5,<2
+
+flask>=3,<4
+
+# Not listed: `langchain` itself is never imported (LCEL lives in langchain-core),
+# and sentence-transformers / anthropic arrive as dependencies of the two
+# integration packages above.

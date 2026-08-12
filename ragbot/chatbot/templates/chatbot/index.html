@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG Bot</title>
+    <style>
+        :root {
+            --bg-1: #0f172a;
+            --bg-2: #4c1d95;
+            --card: #ffffff;
+            --text: #1e1b2e;
+            --muted: #6b7280;
+            --accent-1: #6366f1;
+            --accent-2: #8b5cf6;
+            --user-bubble: #eef2ff;
+            --bot-bubble: #f8fafc;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: radial-gradient(circle at 20% 20%, var(--bg-2), transparent 40%),
+                        radial-gradient(circle at 80% 0%, #db2777, transparent 35%),
+                        linear-gradient(135deg, var(--bg-1), #1e1b4b);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 32px 16px;
+        }
+
+        .card {
+            width: 100%;
+            max-width: 640px;
+            background: var(--card);
+            border-radius: 20px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.35);
+            overflow: hidden;
+        }
+
+        .header {
+            padding: 28px 32px;
+            background: linear-gradient(120deg, var(--accent-1), var(--accent-2));
+            color: white;
+        }
+
+        .header .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            background: rgba(255, 255, 255, 0.18);
+            padding: 4px 10px;
+            border-radius: 999px;
+            margin-bottom: 12px;
+        }
+
+        .header .badge .dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #4ade80;
+            box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.3);
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .header p {
+            margin: 6px 0 0;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.85);
+        }
+
+        .body {
+            padding: 28px 32px 32px;
+        }
+
+        .thread {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        /* Only claim the gap above the form once there is something to show. */
+        .thread.has-messages {
+            margin-bottom: 20px;
+        }
+
+        .bubble {
+            padding: 14px 16px;
+            border-radius: 14px;
+            font-size: 15px;
+            line-height: 1.55;
+            white-space: pre-wrap;
+        }
+
+        .bubble .label {
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+            opacity: 0.6;
+        }
+
+        .bubble .meta {
+            display: block;
+            margin-top: 10px;
+            padding-top: 8px;
+            border-top: 1px solid #eef0f4;
+            font-size: 11px;
+            color: var(--muted);
+        }
+
+        .bubble.user {
+            background: var(--user-bubble);
+            color: var(--text);
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+            max-width: 85%;
+        }
+
+        .bubble.bot {
+            background: var(--bot-bubble);
+            border: 1px solid #eef0f4;
+            color: var(--text);
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+            max-width: 85%;
+        }
+
+        .bubble.bot.error {
+            background: #fef2f2;
+            border-color: #fecaca;
+            color: #991b1b;
+        }
+
+        .bubble.loading .dots {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            height: 9px;
+        }
+
+        .bubble.loading .dots i {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--accent-1);
+            animation: dot-pulse 1.2s infinite ease-in-out;
+        }
+
+        .bubble.loading .dots i:nth-child(2) { animation-delay: 0.18s; }
+        .bubble.loading .dots i:nth-child(3) { animation-delay: 0.36s; }
+
+        @keyframes dot-pulse {
+            0%, 80%, 100% { opacity: 0.25; transform: translateY(0); }
+            40% { opacity: 1; transform: translateY(-3px); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .bubble.loading .dots i { animation: none; opacity: 0.5; }
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 90px;
+            resize: vertical;
+            padding: 14px 16px;
+            border-radius: 14px;
+            border: 1.5px solid #e5e7eb;
+            font-family: inherit;
+            font-size: 15px;
+            color: var(--text);
+            background: #fafafa;
+            outline: none;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        textarea:focus {
+            border-color: var(--accent-1);
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12);
+            background: white;
+        }
+
+        button {
+            align-self: flex-end;
+            padding: 11px 26px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(120deg, var(--accent-1), var(--accent-2));
+            color: white;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.12s ease, box-shadow 0.12s ease;
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.35);
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 24px rgba(99, 102, 241, 0.45);
+        }
+
+        button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.55;
+            cursor: default;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        button.ghost {
+            background: none;
+            color: var(--muted);
+            box-shadow: none;
+            font-weight: 500;
+            padding: 11px 14px;
+        }
+
+        button.ghost:hover:not(:disabled) {
+            color: var(--text);
+            transform: none;
+            box-shadow: none;
+        }
+
+        .footer-hint {
+            margin-top: 18px;
+            font-size: 12px;
+            color: var(--muted);
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="header">
+            <span class="badge"><span class="dot"></span>RAG + Claude</span>
+            <h1>Ask the bot</h1>
+            <p>Answers are grounded in your documents, retrieved live via FAISS.</p>
+        </div>
+        <div class="body">
+            <div class="thread{% if answer or error %} has-messages{% endif %}" id="thread">
+                {% if answer or error %}
+                <div class="bubble user">
+                    <span class="label">You</span>{{ question }}
+                </div>
+                {% if answer %}
+                <div class="bubble bot">
+                    <span class="label">Bot</span>{{ answer.text }}
+                    <span class="meta">{{ answer.model }}{% if answer.temperature is not None %} · temp {{ answer.temperature }}{% endif %} · {{ answer.input_tokens }} in / {{ answer.output_tokens }} out · {{ answer.sources|length }} sources</span>
+                </div>
+                {% else %}
+                <div class="bubble bot error">
+                    <span class="label">Error</span>{{ error }}
+                </div>
+                {% endif %}
+                {% endif %}
+            </div>
+            <form method="post" id="chat-form">
+                {% csrf_token %}
+                <textarea name="question" id="question" placeholder="Ask a question about the documents..."></textarea>
+                <div class="actions">
+                    <button type="button" id="reset" class="ghost">New conversation</button>
+                    <button type="submit" id="ask">Ask →</button>
+                </div>
+            </form>
+            <p class="footer-hint">Retrieval-augmented answers · Powered by Claude</p>
+        </div>
+    </div>
+
+    <script>
+        // Progressive enhancement: post the question in the background so the
+        // thread stays on screen with a loader while Claude answers. Without
+        // JavaScript the form still submits normally and the page re-renders.
+        (function () {
+            var form = document.getElementById('chat-form');
+            var input = document.getElementById('question');
+            var button = document.getElementById('ask');
+            var thread = document.getElementById('thread');
+            var token = form.querySelector('[name=csrfmiddlewaretoken]');
+
+            if (!window.fetch || !token) return;
+
+            function append(node) {
+                thread.appendChild(node);
+                thread.classList.add('has-messages');
+                node.scrollIntoView({ block: 'nearest' });
+                return node;
+            }
+
+            function bubble(className, label, text) {
+                var el = document.createElement('div');
+                el.className = 'bubble ' + className;
+                var tag = document.createElement('span');
+                tag.className = 'label';
+                tag.textContent = label;
+                el.appendChild(tag);
+                // textContent, not innerHTML — the answer is untrusted text.
+                el.appendChild(document.createTextNode(text));
+                return append(el);
+            }
+
+            // The server is stateless; this id is what ties turns together.
+            var CONVERSATION_KEY = 'ragbot-conversation';
+
+            function uuid4() {
+                if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+                if (!window.crypto || !crypto.getRandomValues) return null;
+                var bytes = crypto.getRandomValues(new Uint8Array(16));
+                bytes[6] = (bytes[6] & 0x0f) | 0x40;
+                bytes[8] = (bytes[8] & 0x3f) | 0x80;
+                var hex = [];
+                for (var i = 0; i < 16; i++) {
+                    hex.push((bytes[i] + 0x100).toString(16).slice(1));
+                }
+                return [
+                    hex.slice(0, 4).join(''), hex.slice(4, 6).join(''),
+                    hex.slice(6, 8).join(''), hex.slice(8, 10).join(''),
+                    hex.slice(10, 16).join('')
+                ].join('-');
+            }
+
+            function conversationId() {
+                // Storage can be blocked (private mode, embedded contexts).
+                // Falling back to no id just means the turn is stateless.
+                try {
+                    var id = localStorage.getItem(CONVERSATION_KEY);
+                    if (!id) {
+                        id = uuid4();
+                        if (!id) return null;
+                        localStorage.setItem(CONVERSATION_KEY, id);
+                    }
+                    return id;
+                } catch (e) {
+                    return null;
+                }
+            }
+
+            function metaLine(data) {
+                var bits = [data.model];
+                if (data.temperature !== null && data.temperature !== undefined) {
+                    bits.push('temp ' + data.temperature);
+                }
+                if (data.usage) {
+                    bits.push(data.usage.input_tokens + ' in / ' + data.usage.output_tokens + ' out');
+                }
+                if (data.sources) {
+                    bits.push(data.sources.length + ' sources');
+                }
+                return bits.join(' · ');
+            }
+
+            function loader() {
+                var el = document.createElement('div');
+                el.className = 'bubble bot loading';
+                el.innerHTML = '<span class="label">Bot</span><span class="dots"><i></i><i></i><i></i></span>';
+                el.setAttribute('aria-label', 'Thinking');
+                return append(el);
+            }
+
+            form.addEventListener('submit', function (event) {
+                event.preventDefault();
+
+                var question = input.value.trim();
+                if (!question || button.disabled) return;
+
+                bubble('user', 'You', question);
+                input.value = '';
+                input.focus();
+                button.disabled = true;
+                var pending = loader();
+
+                var body = 'question=' + encodeURIComponent(question);
+                var conversation = conversationId();
+                if (conversation) {
+                    body += '&conversation_id=' + encodeURIComponent(conversation);
+                }
+
+                fetch(form.action, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': token.value
+                    },
+                    body: body
+                })
+                    .then(function (response) {
+                        return response.json().catch(function () {
+                            return { error: 'Something went wrong. Please try again.' };
+                        });
+                    })
+                    .then(function (data) {
+                        pending.remove();
+                        if (data.answer) {
+                            var el = bubble('bot', 'Bot', data.answer);
+                            var meta = document.createElement('span');
+                            meta.className = 'meta';
+                            meta.textContent = metaLine(data);
+                            el.appendChild(meta);
+                        } else {
+                            bubble('bot error', 'Error', data.error || 'Something went wrong. Please try again.');
+                        }
+                    })
+                    .catch(function () {
+                        pending.remove();
+                        bubble('bot error', 'Error', 'Network error — please try again.');
+                    })
+                    .then(function () {
+                        button.disabled = false;
+                    });
+            });
+
+            document.getElementById('reset').addEventListener('click', function () {
+                try {
+                    localStorage.removeItem(CONVERSATION_KEY);
+                } catch (e) {
+                    // Nothing stored means nothing to forget.
+                }
+                thread.innerHTML = '';
+                thread.classList.remove('has-messages');
+                input.focus();
+            });
+        })();
+    </script>
+</body>
+</html>
